@@ -69,8 +69,8 @@ public final class FlowableReplay<T> extends ConnectableFlowable<T> implements H
      * @return the new ConnectableObservable instance
      */
     public static <T> ConnectableFlowable<T> observeOn(final ConnectableFlowable<T> cf, final Scheduler scheduler) {
-        final Flowable<T> observable = cf.observeOn(scheduler);
-        return RxJavaPlugins.onAssembly(new ConnectableFlowableReplay<T>(cf, observable));
+        final Flowable<T> flowable = cf.observeOn(scheduler);
+        return RxJavaPlugins.onAssembly(new ConnectableFlowableReplay<T>(cf, flowable));
     }
 
     /**
@@ -409,6 +409,7 @@ public final class FlowableReplay<T> extends ConnectableFlowable<T> implements H
                 RxJavaPlugins.onError(e);
             }
         }
+
         @SuppressWarnings("unchecked")
         @Override
         public void onComplete() {
@@ -624,6 +625,7 @@ public final class FlowableReplay<T> extends ConnectableFlowable<T> implements H
         UnboundedReplayBuffer(int capacityHint) {
             super(capacityHint);
         }
+
         @Override
         public void next(T value) {
             add(NotificationLite.next(value));
@@ -1037,6 +1039,7 @@ public final class FlowableReplay<T> extends ConnectableFlowable<T> implements H
                 setFirst(prev);
             }
         }
+
         @Override
         void truncateFinal() {
             long timeLimit = scheduler.now(unit) - maxAge;
@@ -1141,11 +1144,11 @@ public final class FlowableReplay<T> extends ConnectableFlowable<T> implements H
 
     static final class ConnectableFlowableReplay<T> extends ConnectableFlowable<T> {
         private final ConnectableFlowable<T> cf;
-        private final Flowable<T> observable;
+        private final Flowable<T> flowable;
 
-        ConnectableFlowableReplay(ConnectableFlowable<T> cf, Flowable<T> observable) {
+        ConnectableFlowableReplay(ConnectableFlowable<T> cf, Flowable<T> flowable) {
             this.cf = cf;
-            this.observable = observable;
+            this.flowable = flowable;
         }
 
         @Override
@@ -1155,7 +1158,7 @@ public final class FlowableReplay<T> extends ConnectableFlowable<T> implements H
 
         @Override
         protected void subscribeActual(Subscriber<? super T> s) {
-            observable.subscribe(s);
+            flowable.subscribe(s);
         }
     }
 

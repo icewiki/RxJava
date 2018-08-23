@@ -180,7 +180,6 @@ public class ObservableSubscriberTest {
         to.assertResult(1);
     }
 
-
     @Test
     public void methodTestNoCancel() {
         PublishSubject<Integer> ps = PublishSubject.create();
@@ -215,7 +214,7 @@ public class ObservableSubscriberTest {
 
     static final class BadObservable extends Observable<Integer> {
         @Override
-        protected void subscribeActual(Observer<? super Integer> s) {
+        protected void subscribeActual(Observer<? super Integer> observer) {
             throw new IllegalArgumentException();
         }
     }

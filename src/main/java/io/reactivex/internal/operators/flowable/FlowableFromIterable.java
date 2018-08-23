@@ -104,7 +104,6 @@ public final class FlowableFromIterable<T> extends Flowable<T> {
             return ObjectHelper.requireNonNull(it.next(), "Iterator.next() returned a null value");
         }
 
-
         @Override
         public final boolean isEmpty() {
             return it == null || !it.hasNext();
@@ -128,7 +127,6 @@ public final class FlowableFromIterable<T> extends Flowable<T> {
             }
         }
 
-
         @Override
         public final void cancel() {
             cancelled = true;
@@ -144,17 +142,17 @@ public final class FlowableFromIterable<T> extends Flowable<T> {
 
         private static final long serialVersionUID = -6022804456014692607L;
 
-        final Subscriber<? super T> actual;
+        final Subscriber<? super T> downstream;
 
         IteratorSubscription(Subscriber<? super T> actual, Iterator<? extends T> it) {
             super(it);
-            this.actual = actual;
+            this.downstream = actual;
         }
 
         @Override
         void fastPath() {
             Iterator<? extends T> it = this.it;
-            Subscriber<? super T> a = actual;
+            Subscriber<? super T> a = downstream;
             for (;;) {
                 if (cancelled) {
                     return;
@@ -209,7 +207,7 @@ public final class FlowableFromIterable<T> extends Flowable<T> {
         void slowPath(long r) {
             long e = 0L;
             Iterator<? extends T> it = this.it;
-            Subscriber<? super T> a = actual;
+            Subscriber<? super T> a = downstream;
 
             for (;;) {
 
@@ -282,17 +280,17 @@ public final class FlowableFromIterable<T> extends Flowable<T> {
 
         private static final long serialVersionUID = -6022804456014692607L;
 
-        final ConditionalSubscriber<? super T> actual;
+        final ConditionalSubscriber<? super T> downstream;
 
         IteratorConditionalSubscription(ConditionalSubscriber<? super T> actual, Iterator<? extends T> it) {
             super(it);
-            this.actual = actual;
+            this.downstream = actual;
         }
 
         @Override
         void fastPath() {
             Iterator<? extends T> it = this.it;
-            ConditionalSubscriber<? super T> a = actual;
+            ConditionalSubscriber<? super T> a = downstream;
             for (;;) {
                 if (cancelled) {
                     return;
@@ -346,7 +344,7 @@ public final class FlowableFromIterable<T> extends Flowable<T> {
         void slowPath(long r) {
             long e = 0L;
             Iterator<? extends T> it = this.it;
-            ConditionalSubscriber<? super T> a = actual;
+            ConditionalSubscriber<? super T> a = downstream;
 
             for (;;) {
 

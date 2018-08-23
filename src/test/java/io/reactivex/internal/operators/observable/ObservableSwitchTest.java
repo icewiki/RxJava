@@ -484,7 +484,6 @@ public class ObservableSwitchTest {
         Assert.assertEquals(250, to.valueCount());
     }
 
-
     @Test
     public void delayErrors() {
         PublishSubject<ObservableSource<Integer>> source = PublishSubject.create();
@@ -608,7 +607,6 @@ public class ObservableSwitchTest {
 
     }
 
-
     @Test
     public void switchMapInnerCancelled() {
         PublishSubject<Integer> ps = PublishSubject.create();
@@ -664,9 +662,9 @@ public class ObservableSwitchTest {
             public SingleSource<Integer> apply(Object v) throws Exception {
                 return new SingleSource<Integer>() {
                     @Override
-                    public void subscribe(SingleObserver<? super Integer> s) {
-                        s.onSubscribe(Disposables.empty());
-                        s.onSuccess(1);
+                    public void subscribe(SingleObserver<? super Integer> observer) {
+                        observer.onSubscribe(Disposables.empty());
+                        observer.onSuccess(1);
                     }
                 };
             }

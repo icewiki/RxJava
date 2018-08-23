@@ -37,32 +37,87 @@ import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
 /**
- * The Single class implements the Reactive Pattern for a single value response.
- * See {@link Flowable} or {@link Observable} for the
- * implementation of the Reactive Pattern for a stream or vector of values.
+ * The {@code Single} class implements the Reactive Pattern for a single value response.
  * <p>
- * {@code Single} behaves the same as {@link Observable} except that it can only emit either a single successful
- * value, or an error (there is no "onComplete" notification as there is for {@link Observable})
+ * {@code Single} behaves similarly to {@link Observable} except that it can only emit either a single successful
+ * value or an error (there is no "onComplete" notification as there is for an {@link Observable}).
  * <p>
- * Like an {@link Observable}, a {@code Single} is lazy, can be either "hot" or "cold", synchronous or
- * asynchronous.
+ * The {@code Single} class implements the {@link SingleSource} base interface and the default consumer
+ * type it interacts with is the {@link SingleObserver} via the {@link #subscribe(SingleObserver)} method.
+ * <p>
+ * The {@code Single} operates with the following sequential protocol:
+ * <pre>
+ *     <code>onSubscribe (onSuccess | onError)?</code>
+ * </pre>
+ * <p>
+ * Note that {@code onSuccess} and {@code onError} are mutually exclusive events; unlike {@code Observable},
+ * {@code onSuccess} is never followed by {@code onError}.
+ * <p>
+ * Like {@code Observable}, a running {@code Single} can be stopped through the {@link Disposable} instance
+ * provided to consumers through {@link SingleObserver#onSubscribe}.
+ * <p>
+ * Like an {@code Observable}, a {@code Single} is lazy, can be either "hot" or "cold", synchronous or
+ * asynchronous. {@code Single} instances returned by the methods of this class are <em>cold</em>
+ * and there is a standard <em>hot</em> implementation in the form of a subject:
+ * {@link io.reactivex.subjects.SingleSubject SingleSubject}.
  * <p>
  * The documentation for this class makes use of marble diagrams. The following legend explains these diagrams:
  * <p>
  * <img width="640" height="301" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.legend.png" alt="">
  * <p>
+ * See {@link Flowable} or {@link Observable} for the
+ * implementation of the Reactive Pattern for a stream or vector of values.
+ * <p>
  * For more information see the <a href="http://reactivex.io/documentation/single.html">ReactiveX
  * documentation</a>.
+ * <p>
+ * Example:
+ * <pre><code>
+ * Disposable d = Single.just("Hello World")
+ *    .delay(10, TimeUnit.SECONDS, Schedulers.io())
+ *    .subscribeWith(new DisposableSingleObserver&lt;String&gt;() {
+ *        &#64;Override
+ *        public void onStart() {
+ *            System.out.println("Started");
+ *        }
  *
+ *        &#64;Override
+ *        public void onSuccess(String value) {
+ *            System.out.println("Success: " + value);
+ *        }
+ *
+ *        &#64;Override
+ *        public void onError(Throwable error) {
+ *            error.printStackTrace();
+ *        }
+ *    });
+ * 
+ * Thread.sleep(5000);
+ * 
+ * d.dispose();
+ * </code></pre>
+ * <p>
+ * Note that by design, subscriptions via {@link #subscribe(SingleObserver)} can't be cancelled/disposed
+ * from the outside (hence the
+ * {@code void} return of the {@link #subscribe(SingleObserver)} method) and it is the
+ * responsibility of the implementor of the {@code SingleObserver} to allow this to happen.
+ * RxJava supports such usage with the standard
+ * {@link io.reactivex.observers.DisposableSingleObserver DisposableSingleObserver} instance.
+ * For convenience, the {@link #subscribeWith(SingleObserver)} method is provided as well to
+ * allow working with a {@code SingleObserver} (or subclass) instance to be applied with in
+ * a fluent manner (such as in the example above).
  * @param <T>
  *            the type of the item emitted by the Single
  * @since 2.0
+ * @see io.reactivex.observers.DisposableSingleObserver
  */
 public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Runs multiple SingleSources and signals the events of the first one that signals (cancelling
      * the rest).
+     * <p>
+     * <img width="640" height="515" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.amb.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code amb} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -83,6 +138,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Runs multiple SingleSources and signals the events of the first one that signals (cancelling
      * the rest).
+     * <p>
+     * <img width="640" height="515" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.ambArray.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code ambArray} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -109,6 +166,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Concatenate the single values, in a non-overlapping fashion, of the SingleSources provided by
      * an Iterable sequence.
+     * <p>
+     * <img width="640" height="319" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.i.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -130,6 +189,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Concatenate the single values, in a non-overlapping fashion, of the SingleSources provided by
      * an Observable sequence.
+     * <p>
+     * <img width="640" height="319" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.o.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code concat} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -150,6 +211,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Concatenate the single values, in a non-overlapping fashion, of the SingleSources provided by
      * a Publisher sequence.
+     * <p>
+     * <img width="640" height="308" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.p.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer
@@ -172,6 +235,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Concatenate the single values, in a non-overlapping fashion, of the SingleSources provided by
      * a Publisher sequence and prefetched by the specified amount.
+     * <p>
+     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.pn.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer
@@ -198,7 +263,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Returns a Flowable that emits the items emitted by two Singles, one after the other.
      * <p>
-     * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.png" alt="">
+     * <img width="640" height="366" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -229,7 +294,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Returns a Flowable that emits the items emitted by three Singles, one after the other.
      * <p>
-     * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.png" alt="">
+     * <img width="640" height="366" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.o3.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -264,7 +329,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Returns a Flowable that emits the items emitted by four Singles, one after the other.
      * <p>
-     * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.png" alt="">
+     * <img width="640" height="362" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concat.o4.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -302,6 +367,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Concatenate the single values, in a non-overlapping fashion, of the SingleSources provided in
      * an array.
+     * <p>
+     * <img width="640" height="319" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concatArray.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -347,6 +414,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Concatenates a Publisher sequence of SingleSources eagerly into a single stream of values.
      * <p>
+     * <img width="640" height="307" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concatEager.p.png" alt="">
+     * <p>
      * Eager concatenation means that once a subscriber subscribes, this operator subscribes to all of the
      * emitted source Publishers as they are observed. The operator buffers the values emitted by these
      * Publishers and then drains them in order, each one after the previous one completes.
@@ -372,6 +441,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Concatenates a sequence of SingleSources eagerly into a single stream of values.
      * <p>
+     * <img width="640" height="319" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.concatEager.i.png" alt="">
+     * <p>
      * Eager concatenation means that once a subscriber subscribes, this operator subscribes to all of the
      * source SingleSources. The operator buffers the values emitted by these SingleSources and then drains them
      * in order, each one after the previous one completes.
@@ -394,6 +465,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Provides an API (via a cold Completable) that bridges the reactive world with the callback-style world.
+     * <p>
+     * <img width="640" height="454" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.create.png" alt="">
      * <p>
      * Example:
      * <pre><code>
@@ -436,6 +509,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Calls a {@link Callable} for each individual {@link SingleObserver} to return the actual {@link SingleSource} to
      * be subscribed to.
+     * <p>
+     * <img width="640" height="515" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.defer.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code defer} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -454,6 +529,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Signals a Throwable returned by the callback function for each individual SingleObserver.
+     * <p>
+     * <img width="640" height="283" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.error.c.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code error} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -474,7 +551,7 @@ public abstract class Single<T> implements SingleSource<T> {
      * Returns a Single that invokes a subscriber's {@link SingleObserver#onError onError} method when the
      * subscriber subscribes to it.
      * <p>
-     * <img width="640" height="190" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.error.png" alt="">
+     * <img width="640" height="283" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.error.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code error} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -501,6 +578,8 @@ public abstract class Single<T> implements SingleSource<T> {
      * Allows you to defer execution of passed function until SingleObserver subscribes to the {@link Single}.
      * It makes passed function "lazy".
      * Result of the function invocation will be emitted by the {@link Single}.
+     * <p>
+     * <img width="640" height="467" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.fromCallable.png" alt="">
      * <dl>
      *   <dt><b>Scheduler:</b></dt>
      *   <dd>{@code fromCallable} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -661,6 +740,8 @@ public abstract class Single<T> implements SingleSource<T> {
      * Note that even though {@link Publisher} appears to be a functional interface, it
      * is not recommended to implement it through a lambda as the specification requires
      * state management that is not achievable with a stateless lambda.
+     * <p>
+     * <img width="640" height="322" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.fromPublisher.png" alt="">
      * <dl>
      * <dt><b>Backpressure:</b></dt>
      * <dd>The {@code publisher} is consumed in an unbounded fashion but will be cancelled
@@ -685,6 +766,8 @@ public abstract class Single<T> implements SingleSource<T> {
      * Wraps a specific ObservableSource into a Single and signals its single element or error.
      * <p>If the ObservableSource is empty, a NoSuchElementException is signalled.
      * If the source has more than one element, an IndexOutOfBoundsException is signalled.
+     * <p>
+     * <img width="640" height="343" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.fromObservable.png" alt="">
      * <dl>
      *   <dt><b>Scheduler:</b></dt>
      *   <dd>{@code fromObservable} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -731,6 +814,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Merges an Iterable sequence of SingleSource instances into a single Flowable sequence,
      * running all SingleSources at once.
+     * <p>
+     * <img width="640" height="319" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.i.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -766,6 +851,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Merges a Flowable sequence of SingleSource instances into a single Flowable sequence,
      * running all SingleSources at once.
+     * <p>
+     * <img width="640" height="307" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.p.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -804,7 +891,7 @@ public abstract class Single<T> implements SingleSource<T> {
      * Flattens a {@code Single} that emits a {@code Single} into a single {@code Single} that emits the item
      * emitted by the nested {@code Single}, without any transformation.
      * <p>
-     * <img width="640" height="370" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.oo.png" alt="">
+     * <img width="640" height="412" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.oo.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code merge} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -833,7 +920,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Flattens two Singles into a single Flowable, without any transformation.
      * <p>
-     * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.png" alt="">
+     * <img width="640" height="414" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.png" alt="">
      * <p>
      * You can combine items emitted by multiple Singles so that they appear as a single Flowable, by
      * using the {@code merge} method.
@@ -881,7 +968,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Flattens three Singles into a single Flowable, without any transformation.
      * <p>
-     * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.png" alt="">
+     * <img width="640" height="366" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.o3.png" alt="">
      * <p>
      * You can combine items emitted by multiple Singles so that they appear as a single Flowable, by using
      * the {@code merge} method.
@@ -933,7 +1020,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Flattens four Singles into a single Flowable, without any transformation.
      * <p>
-     * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.png" alt="">
+     * <img width="640" height="362" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.o4.png" alt="">
      * <p>
      * You can combine items emitted by multiple Singles so that they appear as a single Flowable, by using
      * the {@code merge} method.
@@ -995,16 +1082,16 @@ public abstract class Single<T> implements SingleSource<T> {
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code mergeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.9 - experimental
      * @param <T> the common and resulting value type
      * @param sources the Iterable sequence of SingleSource sources
      * @return the new Flowable instance
-     * @since 2.1.9 - experimental
      * @see #merge(Iterable)
+     * @since 2.2
      */
     @CheckReturnValue
     @BackpressureSupport(BackpressureKind.FULL)
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public static <T> Flowable<T> mergeDelayError(Iterable<? extends SingleSource<? extends T>> sources) {
         return mergeDelayError(Flowable.fromIterable(sources));
     }
@@ -1018,17 +1105,17 @@ public abstract class Single<T> implements SingleSource<T> {
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code mergeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.9 - experimental
      * @param <T> the common and resulting value type
      * @param sources the Flowable sequence of SingleSource sources
      * @return the new Flowable instance
      * @see #merge(Publisher)
-     * @since 2.1.9 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @BackpressureSupport(BackpressureKind.FULL)
     @SchedulerSupport(SchedulerSupport.NONE)
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    @Experimental
     public static <T> Flowable<T> mergeDelayError(Publisher<? extends SingleSource<? extends T>> sources) {
         ObjectHelper.requireNonNull(sources, "sources is null");
         return RxJavaPlugins.onAssembly(new FlowableFlatMapPublisher(sources, SingleInternalHelper.toFlowable(), true, Integer.MAX_VALUE, Flowable.bufferSize()));
@@ -1049,7 +1136,7 @@ public abstract class Single<T> implements SingleSource<T> {
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code mergeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.9 - experimental
      * @param <T> the common value type
      * @param source1
      *            a SingleSource to be merged
@@ -1058,13 +1145,12 @@ public abstract class Single<T> implements SingleSource<T> {
      * @return a Flowable that emits all of the items emitted by the source Singles
      * @see <a href="http://reactivex.io/documentation/operators/merge.html">ReactiveX operators documentation: Merge</a>
      * @see #merge(SingleSource, SingleSource)
-     * @since 2.1.9 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @BackpressureSupport(BackpressureKind.FULL)
     @SchedulerSupport(SchedulerSupport.NONE)
     @SuppressWarnings("unchecked")
-    @Experimental
     public static <T> Flowable<T> mergeDelayError(
             SingleSource<? extends T> source1, SingleSource<? extends T> source2
      ) {
@@ -1087,7 +1173,7 @@ public abstract class Single<T> implements SingleSource<T> {
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code mergeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.9 - experimental
      * @param <T> the common value type
      * @param source1
      *            a SingleSource to be merged
@@ -1098,13 +1184,12 @@ public abstract class Single<T> implements SingleSource<T> {
      * @return a Flowable that emits all of the items emitted by the source Singles
      * @see <a href="http://reactivex.io/documentation/operators/merge.html">ReactiveX operators documentation: Merge</a>
      * @see #merge(SingleSource, SingleSource, SingleSource)
-     * @since 2.1.9 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @BackpressureSupport(BackpressureKind.FULL)
     @SchedulerSupport(SchedulerSupport.NONE)
     @SuppressWarnings("unchecked")
-    @Experimental
     public static <T> Flowable<T> mergeDelayError(
             SingleSource<? extends T> source1, SingleSource<? extends T> source2,
             SingleSource<? extends T> source3
@@ -1129,7 +1214,7 @@ public abstract class Single<T> implements SingleSource<T> {
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code mergeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.9 - experimental
      * @param <T> the common value type
      * @param source1
      *            a SingleSource to be merged
@@ -1142,13 +1227,12 @@ public abstract class Single<T> implements SingleSource<T> {
      * @return a Flowable that emits all of the items emitted by the source Singles
      * @see <a href="http://reactivex.io/documentation/operators/merge.html">ReactiveX operators documentation: Merge</a>
      * @see #merge(SingleSource, SingleSource, SingleSource, SingleSource)
-     * @since 2.1.9 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @BackpressureSupport(BackpressureKind.FULL)
     @SchedulerSupport(SchedulerSupport.NONE)
     @SuppressWarnings("unchecked")
-    @Experimental
     public static <T> Flowable<T> mergeDelayError(
             SingleSource<? extends T> source1, SingleSource<? extends T> source2,
             SingleSource<? extends T> source3, SingleSource<? extends T> source4
@@ -1181,6 +1265,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Signals success with 0L value after the given delay for each SingleObserver.
+     * <p>
+     * <img width="640" height="292" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.timer.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code timer} operates by default on the {@code computation} {@link Scheduler}.</dd>
@@ -1198,6 +1284,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Signals success with 0L value after the given delay for each SingleObserver.
+     * <p>
+     * <img width="640" height="292" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.timer.s.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>you specify the {@link Scheduler} to signal on.</dd>
@@ -1221,6 +1309,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Compares two SingleSources and emits true if they emit the same value (compared via Object.equals).
+     * <p>
+     * <img width="640" height="465" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.equals.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code equals} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -1835,6 +1925,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Signals the event of this or the other SingleSource whichever signals first.
+     * <p>
+     * <img width="640" height="463" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.ambWith.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code ambWith} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -1855,19 +1947,20 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Calls the specified converter function during assembly time and returns its resulting value.
      * <p>
+     * <img width="640" height="553" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.as.png" alt="">
+     * <p>
      * This allows fluent conversion to any other type.
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code as} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.7 - experimental
      * @param <R> the resulting object type
      * @param converter the function that receives the current Single instance and returns a value
      * @return the converted value
      * @throws NullPointerException if converter is null
-     * @since 2.1.7 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <R> R as(@NonNull SingleConverter<T, ? extends R> converter) {
@@ -1877,6 +1970,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Hides the identity of the current Single, including the Disposable that is sent
      * to the downstream via {@code onSubscribe()}.
+     * <p>
+     * <img width="640" height="458" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.hide.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code hide} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -1892,6 +1987,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Transform a Single by applying a particular Transformer function to it.
+     * <p>
+     * <img width="640" height="612" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.compose.png" alt="">
      * <p>
      * This method operates on the Single itself whereas {@link #lift} operates on the Single's SingleObservers.
      * <p>
@@ -1980,6 +2077,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Delays the emission of the success signal from the current Single by the specified amount.
      * An error signal will not be delayed.
+     * <p>
+     * <img width="640" height="457" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.delay.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code delay} operates by default on the {@code computation} {@link Scheduler}.</dd>
@@ -1998,18 +2097,19 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Delays the emission of the success or error signal from the current Single by the specified amount.
+     * <p>
+     * <img width="640" height="457" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.delay.e.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code delay} operates by default on the {@code computation} {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.5 - experimental
      * @param time the amount of time the success or error signal should be delayed for
      * @param unit the time unit
      * @param delayError if true, both success and error signals are delayed. if false, only success signals are delayed.
      * @return the new Single instance
-     * @since 2.1.5 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.COMPUTATION)
     public final Single<T> delay(long time, TimeUnit unit, boolean delayError) {
@@ -2019,6 +2119,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Delays the emission of the success signal from the current Single by the specified amount.
      * An error signal will not be delayed.
+     * <p>
+     * <img width="640" height="457" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.delay.s.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>you specify the {@link Scheduler} where the non-blocking wait and emission happens</dd>
@@ -2041,11 +2143,13 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Delays the emission of the success or error signal from the current Single by the specified amount.
+     * <p>
+     * <img width="640" height="457" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.delay.se.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>you specify the {@link Scheduler} where the non-blocking wait and emission happens</dd>
      * </dl>
-     *
+     * <p>History: 2.1.5 - experimental
      * @param time the amount of time the success or error signal should be delayed for
      * @param unit the time unit
      * @param scheduler the target scheduler to use for the non-blocking wait and emission
@@ -2054,9 +2158,8 @@ public abstract class Single<T> implements SingleSource<T> {
      * @throws NullPointerException
      *             if unit is null, or
      *             if scheduler is null
-     * @since 2.1.5 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.CUSTOM)
     public final Single<T> delay(final long time, final TimeUnit unit, final Scheduler scheduler, boolean delayError) {
@@ -2196,7 +2299,10 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Calls the specified consumer with the success item after this item has been emitted to the downstream.
-     * <p>Note that the {@code doAfterSuccess} action is shared between subscriptions and as such
+     * <p>
+     * <img width="640" height="460" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.doAfterSuccess.png" alt="">
+     * <p>
+     * Note that the {@code doAfterSuccess} action is shared between subscriptions and as such
      * should be thread-safe.
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
@@ -2216,10 +2322,12 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Registers an {@link Action} to be called after this Single invokes either onSuccess or onError.
-     * * <p>Note that the {@code doAfterTerminate} action is shared between subscriptions and as such
-     * should be thread-safe.</p>
      * <p>
-     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/doAfterTerminate.png" alt="">
+     * <img width="640" height="460" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.doAfterTerminate.png" alt="">
+     * <p>
+     * Note that the {@code doAfterTerminate} action is shared between subscriptions and as such
+     * should be thread-safe.</p>
+     *
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code doAfterTerminate} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -2623,11 +2731,11 @@ public abstract class Single<T> implements SingleSource<T> {
      *     // and subsequently this class has to send a Disposable to the downstream.
      *     // Note that relaying the upstream's Disposable directly is not allowed in RxJava
      *     &#64;Override
-     *     public void onSubscribe(Disposable s) {
+     *     public void onSubscribe(Disposable d) {
      *         if (upstream != null) {
-     *             s.cancel();
+     *             d.dispose();
      *         } else {
-     *             upstream = s;
+     *             upstream = d;
      *             downstream.onSubscribe(this);
      *         }
      *     }
@@ -2799,7 +2907,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Flattens this and another Single into a single Flowable, without any transformation.
      * <p>
-     * <img width="640" height="380" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.merge.png" alt="">
+     * <img width="640" height="415" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.mergeWith.png" alt="">
      * <p>
      * You can combine items emitted by multiple Singles so that they appear as a single Flowable, by using
      * the {@code mergeWith} method.
@@ -2852,7 +2960,7 @@ public abstract class Single<T> implements SingleSource<T> {
      * Instructs a Single to emit an item (returned by a specified function) rather than invoking
      * {@link SingleObserver#onError onError} if it encounters an error.
      * <p>
-     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.onErrorReturn.png" alt="">
+     * <img width="640" height="451" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.onErrorReturn.png" alt="">
      * <p>
      * By default, when a Single encounters an error that prevents it from emitting the expected item to its
      * subscriber, the Single invokes its subscriber's {@link SingleObserver#onError} method, and then quits
@@ -2883,6 +2991,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Signals the specified value as success in case the current Single signals an error.
+     * <p>
+     * <img width="640" height="451" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.onErrorReturnItem.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code onErrorReturnItem} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -2902,7 +3012,7 @@ public abstract class Single<T> implements SingleSource<T> {
      * Instructs a Single to pass control to another Single rather than invoking
      * {@link SingleObserver#onError(Throwable)} if it encounters an error.
      * <p>
-     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/onErrorResumeNext.png" alt="">
+     * <img width="640" height="451" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.onErrorResumeNext.png" alt="">
      * <p>
      * By default, when a Single encounters an error that prevents it from emitting the expected item to
      * its {@link SingleObserver}, the Single invokes its SingleObserver's {@code onError} method, and then quits
@@ -2936,7 +3046,7 @@ public abstract class Single<T> implements SingleSource<T> {
      * Instructs a Single to pass control to another Single rather than invoking
      * {@link SingleObserver#onError(Throwable)} if it encounters an error.
      * <p>
-     * <img width="640" height="310" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/onErrorResumeNext.png" alt="">
+     * <img width="640" height="451" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.onErrorResumeNext.f.png" alt="">
      * <p>
      * By default, when a Single encounters an error that prevents it from emitting the expected item to
      * its {@link SingleObserver}, the Single invokes its SingleObserver's {@code onError} method, and then quits
@@ -2975,11 +3085,11 @@ public abstract class Single<T> implements SingleSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code onTerminateDetach} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.5 - experimental
      * @return a Single which nulls out references to the upstream producer and downstream SingleObserver if
      * the sequence is terminated or downstream calls dispose()
-     * @since 2.1.5 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Single<T> onTerminateDetach() {
@@ -2988,6 +3098,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Repeatedly re-subscribes to the current Single and emits each success value.
+     * <p>
+     * <img width="640" height="457" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.repeat.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -3006,6 +3118,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Re-subscribes to the current Single at most the given number of times and emits each success value.
+     * <p>
+     * <img width="640" height="457" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.repeat.n.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -3027,6 +3141,8 @@ public abstract class Single<T> implements SingleSource<T> {
      * Re-subscribes to the current Single if
      * the Publisher returned by the handler function signals a value in response to a
      * value signalled through the Flowable the handle receives.
+     * <p>
+     * <img width="640" height="1478" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.repeatWhen.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.
@@ -3050,6 +3166,8 @@ public abstract class Single<T> implements SingleSource<T> {
 
     /**
      * Re-subscribes to the current Single until the given BooleanSupplier returns true.
+     * <p>
+     * <img width="640" height="463" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.repeatUntil.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -3125,13 +3243,13 @@ public abstract class Single<T> implements SingleSource<T> {
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code retry} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.8 - experimental
      * @param times the number of times to resubscribe if the current Single fails
      * @param predicate the predicate called with the failure Throwable
      *                  and should return true if a resubscription should happen
      * @return the new Single instance
-     * @since 2.1.8 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Single<T> retry(long times, Predicate<? super Throwable> predicate) {
@@ -3243,9 +3361,9 @@ public abstract class Single<T> implements SingleSource<T> {
     public final Disposable subscribe(final BiConsumer<? super T, ? super Throwable> onCallback) {
         ObjectHelper.requireNonNull(onCallback, "onCallback is null");
 
-        BiConsumerSingleObserver<T> s = new BiConsumerSingleObserver<T>(onCallback);
-        subscribe(s);
-        return s;
+        BiConsumerSingleObserver<T> observer = new BiConsumerSingleObserver<T>(onCallback);
+        subscribe(observer);
+        return observer;
     }
 
     /**
@@ -3297,22 +3415,22 @@ public abstract class Single<T> implements SingleSource<T> {
         ObjectHelper.requireNonNull(onSuccess, "onSuccess is null");
         ObjectHelper.requireNonNull(onError, "onError is null");
 
-        ConsumerSingleObserver<T> s = new ConsumerSingleObserver<T>(onSuccess, onError);
-        subscribe(s);
-        return s;
+        ConsumerSingleObserver<T> observer = new ConsumerSingleObserver<T>(onSuccess, onError);
+        subscribe(observer);
+        return observer;
     }
 
     @SchedulerSupport(SchedulerSupport.NONE)
     @Override
-    public final void subscribe(SingleObserver<? super T> subscriber) {
-        ObjectHelper.requireNonNull(subscriber, "subscriber is null");
+    public final void subscribe(SingleObserver<? super T> observer) {
+        ObjectHelper.requireNonNull(observer, "subscriber is null");
 
-        subscriber = RxJavaPlugins.onSubscribe(this, subscriber);
+        observer = RxJavaPlugins.onSubscribe(this, observer);
 
-        ObjectHelper.requireNonNull(subscriber, "subscriber returned by the RxJavaPlugins hook is null");
+        ObjectHelper.requireNonNull(observer, "subscriber returned by the RxJavaPlugins hook is null");
 
         try {
-            subscribeActual(subscriber);
+            subscribeActual(observer);
         } catch (NullPointerException ex) {
             throw ex;
         } catch (Throwable ex) {
@@ -3559,6 +3677,8 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Calls the specified converter function with the current Single instance
      * during assembly time and returns its result.
+     * <p>
+     * <img width="640" height="553" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.to.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code to} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -3626,7 +3746,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Converts this Single into a {@link Flowable}.
      * <p>
-     * <img width="640" height="305" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.toObservable.png" alt="">
+     * <img width="640" height="462" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.toFlowable.png" alt="">
      * <dl>
      *  <dt><b>Backpressure:</b></dt>
      *  <dd>The returned {@code Flowable} honors the backpressure of the downstream consumer.</dd>
@@ -3650,7 +3770,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Returns a {@link Future} representing the single value emitted by this {@code Single}.
      * <p>
-     * <img width="640" height="395" src="https://github.com/ReactiveX/RxJava/wiki/images/rx-operators/B.toFuture.png" alt="">
+     * <img width="640" height="467" src="https://github.com/ReactiveX/RxJava/wiki/images/rx-operators/Single.toFuture.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code toFuture} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -3668,7 +3788,7 @@ public abstract class Single<T> implements SingleSource<T> {
     /**
      * Converts this Single into a {@link Maybe}.
      * <p>
-     * <img width="640" height="305" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.toObservable.png" alt="">
+     * <img width="640" height="463" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/Single.toMaybe.png" alt="">
      * <dl>
      * <dt><b>Scheduler:</b></dt>
      * <dd>{@code toMaybe} does not operate by default on a particular {@link Scheduler}.</dd>
@@ -3713,14 +3833,14 @@ public abstract class Single<T> implements SingleSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code unsubscribeOn} calls dispose() of the upstream on the {@link Scheduler} you specify.</dd>
      * </dl>
+     * <p>History: 2.0.9 - experimental
      * @param scheduler the target scheduler where to execute the cancellation
      * @return the new Single instance
      * @throws NullPointerException if scheduler is null
-     * @since 2.0.9 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.CUSTOM)
-    @Experimental
     public final Single<T> unsubscribeOn(final Scheduler scheduler) {
         ObjectHelper.requireNonNull(scheduler, "scheduler is null");
         return RxJavaPlugins.onAssembly(new SingleUnsubscribeOn<T>(this, scheduler));

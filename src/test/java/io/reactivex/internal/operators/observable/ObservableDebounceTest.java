@@ -239,6 +239,7 @@ public class ObservableDebounceTest {
         verify(o, never()).onComplete();
         verify(o).onError(any(TestException.class));
     }
+
     @Test
     public void debounceTimedLastIsNotLost() {
         PublishSubject<Integer> source = PublishSubject.create();
@@ -256,6 +257,7 @@ public class ObservableDebounceTest {
         verify(o).onComplete();
         verify(o, never()).onError(any(Throwable.class));
     }
+
     @Test
     public void debounceSelectorLastIsNotLost() {
         PublishSubject<Integer> source = PublishSubject.create();
@@ -471,11 +473,11 @@ public class ObservableDebounceTest {
         new Observable<Integer>() {
             @Override
             protected void subscribeActual(
-                    Observer<? super Integer> s) {
-                s.onSubscribe(Disposables.empty());
+                    Observer<? super Integer> observer) {
+                observer.onSubscribe(Disposables.empty());
                 to.cancel();
-                s.onNext(1);
-                s.onComplete();
+                observer.onNext(1);
+                observer.onComplete();
             }
         }
         .debounce(1, TimeUnit.SECONDS)

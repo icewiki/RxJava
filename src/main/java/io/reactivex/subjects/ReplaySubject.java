@@ -332,9 +332,9 @@ public final class ReplaySubject<T> extends Subject<T> {
     }
 
     @Override
-    public void onSubscribe(Disposable s) {
+    public void onSubscribe(Disposable d) {
         if (done) {
-            s.dispose();
+            d.dispose();
         }
     }
 
@@ -431,9 +431,9 @@ public final class ReplaySubject<T> extends Subject<T> {
      * <p>
      * The method must be called sequentially, similar to the standard
      * {@code onXXX} methods.
-     * @since 2.1.11 - experimental
+     * <p>History: 2.1.11 - experimental
+     * @since 2.2
      */
-    @Experimental
     public void cleanupBuffer() {
         buffer.trimHead();
     }
@@ -597,7 +597,7 @@ public final class ReplaySubject<T> extends Subject<T> {
     static final class ReplayDisposable<T> extends AtomicInteger implements Disposable {
 
         private static final long serialVersionUID = 466549804534799122L;
-        final Observer<? super T> actual;
+        final Observer<? super T> downstream;
         final ReplaySubject<T> state;
 
         Object index;
@@ -605,7 +605,7 @@ public final class ReplaySubject<T> extends Subject<T> {
         volatile boolean cancelled;
 
         ReplayDisposable(Observer<? super T> actual, ReplaySubject<T> state) {
-            this.actual = actual;
+            this.downstream = actual;
             this.state = state;
         }
 
@@ -723,7 +723,7 @@ public final class ReplaySubject<T> extends Subject<T> {
 
             int missed = 1;
             final List<Object> b = buffer;
-            final Observer<? super T> a = rs.actual;
+            final Observer<? super T> a = rs.downstream;
 
             Integer indexObject = (Integer)rs.index;
             int index;
@@ -957,7 +957,7 @@ public final class ReplaySubject<T> extends Subject<T> {
             }
 
             int missed = 1;
-            final Observer<? super T> a = rs.actual;
+            final Observer<? super T> a = rs.downstream;
 
             Node<Object> index = (Node<Object>)rs.index;
             if (index == null) {
@@ -1247,7 +1247,7 @@ public final class ReplaySubject<T> extends Subject<T> {
             }
 
             int missed = 1;
-            final Observer<? super T> a = rs.actual;
+            final Observer<? super T> a = rs.downstream;
 
             TimedNode<Object> index = (TimedNode<Object>)rs.index;
             if (index == null) {

@@ -1294,19 +1294,19 @@ public abstract class Observable<T> implements ObservableSource<T> {
     }
 
     /**
-     * Concatenates a sequence of ObservableSources eagerly into a single stream of values.
+     * Concatenates an array of ObservableSources eagerly into a single stream of values.
+     * <p>
+     * <img width="640" height="410" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/concatArrayEager.png" alt="">
      * <p>
      * Eager concatenation means that once a subscriber subscribes, this operator subscribes to all of the
      * source ObservableSources. The operator buffers the values emitted by these ObservableSources and then drains them
      * in order, each one after the previous one completes.
-     * <p>
-     * <img width="640" height="410" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/concatArrayEager.png" alt="">
      * <dl>
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>This method does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
      * @param <T> the value type
-     * @param sources a sequence of ObservableSources that need to be eagerly concatenated
+     * @param sources an array of ObservableSources that need to be eagerly concatenated
      * @return the new ObservableSource instance with the specified concatenation behavior
      * @since 2.0
      */
@@ -1317,7 +1317,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     }
 
     /**
-     * Concatenates a sequence of ObservableSources eagerly into a single stream of values.
+     * Concatenates an array of ObservableSources eagerly into a single stream of values.
+     * <p>
+     * <img width="640" height="495" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/concatArrayEager.nn.png" alt="">
      * <p>
      * Eager concatenation means that once a subscriber subscribes, this operator subscribes to all of the
      * source ObservableSources. The operator buffers the values emitted by these ObservableSources and then drains them
@@ -1327,7 +1329,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dd>This method does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
      * @param <T> the value type
-     * @param sources a sequence of ObservableSources that need to be eagerly concatenated
+     * @param sources an array of ObservableSources that need to be eagerly concatenated
      * @param maxConcurrency the maximum number of concurrent subscriptions at a time, Integer.MAX_VALUE
      *                       is interpreted as indication to subscribe to all sources at once
      * @param prefetch the number of elements to prefetch from each ObservableSource source
@@ -1339,6 +1341,58 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @SchedulerSupport(SchedulerSupport.NONE)
     public static <T> Observable<T> concatArrayEager(int maxConcurrency, int prefetch, ObservableSource<? extends T>... sources) {
         return fromArray(sources).concatMapEagerDelayError((Function)Functions.identity(), maxConcurrency, prefetch, false);
+    }
+
+    /**
+     * Concatenates an array of {@link ObservableSource}s eagerly into a single stream of values
+     * and delaying any errors until all sources terminate.
+     * <p>
+     * <img width="640" height="354" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/concatArrayEagerDelayError.png" alt="">
+     * <p>
+     * Eager concatenation means that once a subscriber subscribes, this operator subscribes to all of the
+     * source {@code ObservableSource}s. The operator buffers the values emitted by these {@code ObservableSource}s
+     * and then drains them in order, each one after the previous one completes.
+     * <dl>
+     *  <dt><b>Scheduler:</b></dt>
+     *  <dd>This method does not operate by default on a particular {@link Scheduler}.</dd>
+     * </dl>
+     * @param <T> the value type
+     * @param sources an array of {@code ObservableSource}s that need to be eagerly concatenated
+     * @return the new Observable instance with the specified concatenation behavior
+     * @since 2.2.1 - experimental
+     */
+    @CheckReturnValue
+    @SchedulerSupport(SchedulerSupport.NONE)
+    public static <T> Observable<T> concatArrayEagerDelayError(ObservableSource<? extends T>... sources) {
+        return concatArrayEagerDelayError(bufferSize(), bufferSize(), sources);
+    }
+
+    /**
+     * Concatenates an array of {@link ObservableSource}s eagerly into a single stream of values
+     * and delaying any errors until all sources terminate.
+     * <p>
+     * <img width="640" height="460" src="https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/concatArrayEagerDelayError.nn.png" alt="">
+     * <p>
+     * Eager concatenation means that once a subscriber subscribes, this operator subscribes to all of the
+     * source {@code ObservableSource}s. The operator buffers the values emitted by these {@code ObservableSource}s
+     * and then drains them in order, each one after the previous one completes.
+     * <dl>
+     *  <dt><b>Scheduler:</b></dt>
+     *  <dd>This method does not operate by default on a particular {@link Scheduler}.</dd>
+     * </dl>
+     * @param <T> the value type
+     * @param sources an array of {@code ObservableSource}s that need to be eagerly concatenated
+     * @param maxConcurrency the maximum number of concurrent subscriptions at a time, Integer.MAX_VALUE
+     *                       is interpreted as indication to subscribe to all sources at once
+     * @param prefetch the number of elements to prefetch from each {@code ObservableSource} source
+     * @return the new Observable instance with the specified concatenation behavior
+     * @since 2.2.1 - experimental
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @CheckReturnValue
+    @SchedulerSupport(SchedulerSupport.NONE)
+    public static <T> Observable<T> concatArrayEagerDelayError(int maxConcurrency, int prefetch, ObservableSource<? extends T>... sources) {
+        return fromArray(sources).concatMapEagerDelayError((Function)Functions.identity(), maxConcurrency, prefetch, true);
     }
 
     /**
@@ -4951,14 +5005,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code as} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.7 - experimental
      * @param <R> the resulting object type
      * @param converter the function that receives the current Observable instance and returns a value
      * @return the converted value
      * @throws NullPointerException if converter is null
-     * @since 2.1.7 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final <R> R as(@NonNull ObservableConverter<T, ? extends R> converter) {
@@ -4983,9 +5036,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final T blockingFirst() {
-        BlockingFirstObserver<T> s = new BlockingFirstObserver<T>();
-        subscribe(s);
-        T v = s.blockingGet();
+        BlockingFirstObserver<T> observer = new BlockingFirstObserver<T>();
+        subscribe(observer);
+        T v = observer.blockingGet();
         if (v != null) {
             return v;
         }
@@ -5011,9 +5064,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final T blockingFirst(T defaultItem) {
-        BlockingFirstObserver<T> s = new BlockingFirstObserver<T>();
-        subscribe(s);
-        T v = s.blockingGet();
+        BlockingFirstObserver<T> observer = new BlockingFirstObserver<T>();
+        subscribe(observer);
+        T v = observer.blockingGet();
         return v != null ? v : defaultItem;
     }
 
@@ -5120,9 +5173,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final T blockingLast() {
-        BlockingLastObserver<T> s = new BlockingLastObserver<T>();
-        subscribe(s);
-        T v = s.blockingGet();
+        BlockingLastObserver<T> observer = new BlockingLastObserver<T>();
+        subscribe(observer);
+        T v = observer.blockingGet();
         if (v != null) {
             return v;
         }
@@ -5152,9 +5205,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final T blockingLast(T defaultItem) {
-        BlockingLastObserver<T> s = new BlockingLastObserver<T>();
-        subscribe(s);
-        T v = s.blockingGet();
+        BlockingLastObserver<T> observer = new BlockingLastObserver<T>();
+        subscribe(observer);
+        T v = observer.blockingGet();
         return v != null ? v : defaultItem;
     }
 
@@ -6536,13 +6589,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapCompletable} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.6 - experimental
      * @param mapper
      *            a function that, when applied to an item emitted by the source ObservableSource, returns a CompletableSource
      * @return a Completable that signals {@code onComplete} when the upstream and all CompletableSources complete
-     * @since 2.1.6 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Completable concatMapCompletable(Function<? super T, ? extends CompletableSource> mapper) {
@@ -6558,7 +6610,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapCompletable} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.6 - experimental
      * @param mapper
      *            a function that, when applied to an item emitted by the source ObservableSource, returns a CompletableSource
      *
@@ -6566,9 +6618,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *            the number of upstream items expected to be buffered until the current CompletableSource,  mapped from
      *            the current item, completes.
      * @return a Completable that signals {@code onComplete} when the upstream and all CompletableSources complete
-     * @since 2.1.6 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Completable concatMapCompletable(Function<? super T, ? extends CompletableSource> mapper, int capacityHint) {
@@ -6587,16 +6638,16 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapCompletableDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param mapper the function called with the upstream item and should return
      *               a {@code CompletableSource} to become the next source to
      *               be subscribed to
      * @return a new Completable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapCompletable(Function, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Completable concatMapCompletableDelayError(Function<? super T, ? extends CompletableSource> mapper) {
         return concatMapCompletableDelayError(mapper, true, 2);
     }
@@ -6611,6 +6662,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapCompletableDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param mapper the function called with the upstream item and should return
      *               a {@code CompletableSource} to become the next source to
      *               be subscribed to
@@ -6621,12 +6673,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                   {@code CompletableSource} terminates and only then is
      *                   it emitted to the downstream.
      * @return a new Completable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapCompletable(Function)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Completable concatMapCompletableDelayError(Function<? super T, ? extends CompletableSource> mapper, boolean tillTheEnd) {
         return concatMapCompletableDelayError(mapper, tillTheEnd, 2);
     }
@@ -6641,6 +6692,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapCompletableDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param mapper the function called with the upstream item and should return
      *               a {@code CompletableSource} to become the next source to
      *               be subscribed to
@@ -6655,12 +6707,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                 The operator replenishes after half of the prefetch amount has been consumed
      *                 and turned into {@code CompletableSource}s.
      * @return a new Completable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapCompletable(Function, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Completable concatMapCompletableDelayError(Function<? super T, ? extends CompletableSource> mapper, boolean tillTheEnd, int prefetch) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         ObjectHelper.verifyPositive(prefetch, "prefetch");
@@ -6734,18 +6785,18 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapMaybe} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code MaybeSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code MaybeSource} to become the next source to
      *               be subscribed to
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapMaybeDelayError(Function)
      * @see #concatMapMaybe(Function, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapMaybe(Function<? super T, ? extends MaybeSource<? extends R>> mapper) {
         return concatMapMaybe(mapper, 2);
     }
@@ -6760,6 +6811,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapMaybe} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code MaybeSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code MaybeSource} to become the next source to
@@ -6769,13 +6821,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                 The operator replenishes after half of the prefetch amount has been consumed
      *                 and turned into {@code MaybeSource}s.
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapMaybe(Function)
      * @see #concatMapMaybeDelayError(Function, boolean, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapMaybe(Function<? super T, ? extends MaybeSource<? extends R>> mapper, int prefetch) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         ObjectHelper.verifyPositive(prefetch, "prefetch");
@@ -6792,18 +6843,18 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapMaybeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code MaybeSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code MaybeSource} to become the next source to
      *               be subscribed to
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapMaybe(Function)
      * @see #concatMapMaybeDelayError(Function, boolean)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapMaybeDelayError(Function<? super T, ? extends MaybeSource<? extends R>> mapper) {
         return concatMapMaybeDelayError(mapper, true, 2);
     }
@@ -6818,6 +6869,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapMaybeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code MaybeSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code MaybeSource} to become the next source to
@@ -6829,13 +6881,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                   {@code MaybeSource} terminates and only then is
      *                   it emitted to the downstream.
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapMaybe(Function, int)
      * @see #concatMapMaybeDelayError(Function, boolean, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapMaybeDelayError(Function<? super T, ? extends MaybeSource<? extends R>> mapper, boolean tillTheEnd) {
         return concatMapMaybeDelayError(mapper, tillTheEnd, 2);
     }
@@ -6850,6 +6901,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapMaybeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code MaybeSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code MaybeSource} to become the next source to
@@ -6865,12 +6917,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                 The operator replenishes after half of the prefetch amount has been consumed
      *                 and turned into {@code MaybeSource}s.
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapMaybe(Function, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapMaybeDelayError(Function<? super T, ? extends MaybeSource<? extends R>> mapper, boolean tillTheEnd, int prefetch) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         ObjectHelper.verifyPositive(prefetch, "prefetch");
@@ -6887,18 +6938,18 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapSingle} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code SingleSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code SingleSource} to become the next source to
      *               be subscribed to
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapSingleDelayError(Function)
      * @see #concatMapSingle(Function, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapSingle(Function<? super T, ? extends SingleSource<? extends R>> mapper) {
         return concatMapSingle(mapper, 2);
     }
@@ -6913,6 +6964,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapSingle} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code SingleSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code SingleSource} to become the next source to
@@ -6922,13 +6974,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                 The operator replenishes after half of the prefetch amount has been consumed
      *                 and turned into {@code SingleSource}s.
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapSingle(Function)
      * @see #concatMapSingleDelayError(Function, boolean, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapSingle(Function<? super T, ? extends SingleSource<? extends R>> mapper, int prefetch) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         ObjectHelper.verifyPositive(prefetch, "prefetch");
@@ -6945,18 +6996,18 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapSingleDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code SingleSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code SingleSource} to become the next source to
      *               be subscribed to
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapSingle(Function)
      * @see #concatMapSingleDelayError(Function, boolean)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapSingleDelayError(Function<? super T, ? extends SingleSource<? extends R>> mapper) {
         return concatMapSingleDelayError(mapper, true, 2);
     }
@@ -6971,6 +7022,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapSingleDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code SingleSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code SingleSource} to become the next source to
@@ -6982,13 +7034,12 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                   {@code SingleSource} terminates and only then is
      *                   it emitted to the downstream.
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapSingle(Function, int)
      * @see #concatMapSingleDelayError(Function, boolean, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapSingleDelayError(Function<? super T, ? extends SingleSource<? extends R>> mapper, boolean tillTheEnd) {
         return concatMapSingleDelayError(mapper, tillTheEnd, 2);
     }
@@ -7003,6 +7054,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatMapSingleDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the result type of the inner {@code SingleSource}s
      * @param mapper the function called with the upstream item and should return
      *               a {@code SingleSource} to become the next source to
@@ -7018,12 +7070,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                 The operator replenishes after half of the prefetch amount has been consumed
      *                 and turned into {@code SingleSource}s.
      * @return a new Observable instance
-     * @since 2.1.11 - experimental
      * @see #concatMapSingle(Function, int)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> concatMapSingleDelayError(Function<? super T, ? extends SingleSource<? extends R>> mapper, boolean tillTheEnd, int prefetch) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         ObjectHelper.verifyPositive(prefetch, "prefetch");
@@ -7062,13 +7113,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatWith} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.10 - experimental
      * @param other the SingleSource whose signal should be emitted after this {@code Observable} completes normally.
      * @return the new Observable instance
-     * @since 2.1.10 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Observable<T> concatWith(@NonNull SingleSource<? extends T> other) {
         ObjectHelper.requireNonNull(other, "other is null");
         return RxJavaPlugins.onAssembly(new ObservableConcatWithSingle<T>(this, other));
@@ -7083,13 +7134,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatWith} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.10 - experimental
      * @param other the MaybeSource whose signal should be emitted after this Observable completes normally.
      * @return the new Observable instance
-     * @since 2.1.10 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Observable<T> concatWith(@NonNull MaybeSource<? extends T> other) {
         ObjectHelper.requireNonNull(other, "other is null");
         return RxJavaPlugins.onAssembly(new ObservableConcatWithMaybe<T>(this, other));
@@ -7104,13 +7155,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code concatWith} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.10 - experimental
      * @param other the {@code CompletableSource} to subscribe to once the current {@code Observable} completes normally
      * @return the new Observable instance
-     * @since 2.1.10 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Observable<T> concatWith(@NonNull CompletableSource other) {
         ObjectHelper.requireNonNull(other, "other is null");
         return RxJavaPlugins.onAssembly(new ObservableConcatWithCompletable<T>(this, other));
@@ -9412,11 +9463,11 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *     // and subsequently this class has to send a Disposable to the downstream.
      *     // Note that relaying the upstream's Disposable directly is not allowed in RxJava
      *     &#64;Override
-     *     public void onSubscribe(Disposable s) {
+     *     public void onSubscribe(Disposable d) {
      *         if (upstream != null) {
-     *             s.cancel();
+     *             d.dispose();
      *         } else {
-     *             upstream = s;
+     *             upstream = d;
      *             downstream.onSubscribe(this);
      *         }
      *     }
@@ -9473,10 +9524,10 @@ public abstract class Observable<T> implements ObservableSource<T> {
      * //         Such class may define additional parameters to be submitted to
      * //         the custom consumer type.
      *
-     * final class CustomOperator&lt;T&gt; implements ObservableOperator&lt;String&gt; {
+     * final class CustomOperator&lt;T&gt; implements ObservableOperator&lt;String, T&gt; {
      *     &#64;Override
-     *     public Observer&lt;? super String&gt; apply(Observer&lt;? super T&gt; upstream) {
-     *         return new CustomObserver&lt;T&gt;(upstream);
+     *     public Observer&lt;T&gt; apply(Observer&lt;? super String&gt; downstream) {
+     *         return new CustomObserver&lt;T&gt;(downstream);
      *     }
      * }
      *
@@ -9604,14 +9655,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code mergeWith} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.10 - experimental
      * @param other the {@code SingleSource} whose success value to merge with
      * @return the new Observable instance
-     * @since 2.1.10 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Observable<T> mergeWith(@NonNull SingleSource<? extends T> other) {
         ObjectHelper.requireNonNull(other, "other is null");
         return RxJavaPlugins.onAssembly(new ObservableMergeWithSingle<T>(this, other));
@@ -9629,14 +9679,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code mergeWith} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.10 - experimental
      * @param other the {@code MaybeSource} which provides a success value to merge with or completes
      * @return the new Observable instance
-     * @since 2.1.10 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Observable<T> mergeWith(@NonNull MaybeSource<? extends T> other) {
         ObjectHelper.requireNonNull(other, "other is null");
         return RxJavaPlugins.onAssembly(new ObservableMergeWithMaybe<T>(this, other));
@@ -9651,14 +9700,13 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code mergeWith} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.1.10 - experimental
      * @param other the {@code CompletableSource} to await for completion
      * @return the new Observable instance
-     * @since 2.1.10 - experimental
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Observable<T> mergeWith(@NonNull CompletableSource other) {
         ObjectHelper.requireNonNull(other, "other is null");
         return RxJavaPlugins.onAssembly(new ObservableMergeWithCompletable<T>(this, other));
@@ -11004,16 +11052,16 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code safeSubscribe} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     * @param s the incoming Observer instance
+     * @param observer the incoming Observer instance
      * @throws NullPointerException if s is null
      */
     @SchedulerSupport(SchedulerSupport.NONE)
-    public final void safeSubscribe(Observer<? super T> s) {
-        ObjectHelper.requireNonNull(s, "s is null");
-        if (s instanceof SafeObserver) {
-            subscribe(s);
+    public final void safeSubscribe(Observer<? super T> observer) {
+        ObjectHelper.requireNonNull(observer, "s is null");
+        if (observer instanceof SafeObserver) {
+            subscribe(observer);
         } else {
-            subscribe(new SafeObserver<T>(s));
+            subscribe(new SafeObserver<T>(observer));
         }
     }
 
@@ -12228,16 +12276,16 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  {@link RxJavaPlugins#onError(Throwable)} method as {@code UndeliverableException} errors.
      *  </dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param mapper the function called with each upstream item and should return a
      *               {@link CompletableSource} to be subscribed to and awaited for
      *               (non blockingly) for its terminal event
      * @return the new Completable instance
-     * @since 2.1.11 - experimental
      * @see #switchMapCompletableDelayError(Function)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Completable switchMapCompletable(@NonNull Function<? super T, ? extends CompletableSource> mapper) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         return RxJavaPlugins.onAssembly(new ObservableSwitchMapCompletable<T>(this, mapper, false));
@@ -12270,16 +12318,16 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  {@link RxJavaPlugins#onError(Throwable)} method as {@code UndeliverableException} errors.
      *  </dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param mapper the function called with each upstream item and should return a
      *               {@link CompletableSource} to be subscribed to and awaited for
      *               (non blockingly) for its terminal event
      * @return the new Completable instance
-     * @since 2.1.11 - experimental
      * @see #switchMapCompletableDelayError(Function)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final Completable switchMapCompletableDelayError(@NonNull Function<? super T, ? extends CompletableSource> mapper) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         return RxJavaPlugins.onAssembly(new ObservableSwitchMapCompletable<T>(this, mapper, true));
@@ -12305,17 +12353,17 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  {@link io.reactivex.plugins.RxJavaPlugins#onError(Throwable)} as
      *  {@link io.reactivex.exceptions.UndeliverableException UndeliverableException}</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the output value type
      * @param mapper the function called with the current upstream event and should
      *               return a {@code MaybeSource} to replace the current active inner source
      *               and get subscribed to.
      * @return the new Observable instance
-     * @since 2.1.11 - experimental
      * @see #switchMapMaybe(Function)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> switchMapMaybe(@NonNull Function<? super T, ? extends MaybeSource<? extends R>> mapper) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         return RxJavaPlugins.onAssembly(new ObservableSwitchMapMaybe<T, R>(this, mapper, false));
@@ -12331,17 +12379,17 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code switchMapMaybeDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.11 - experimental
      * @param <R> the output value type
      * @param mapper the function called with the current upstream event and should
      *               return a {@code MaybeSource} to replace the current active inner source
      *               and get subscribed to.
      * @return the new Observable instance
-     * @since 2.1.11 - experimental
      * @see #switchMapMaybe(Function)
+     * @since 2.2
      */
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
-    @Experimental
     public final <R> Observable<R> switchMapMaybeDelayError(@NonNull Function<? super T, ? extends MaybeSource<? extends R>> mapper) {
         ObjectHelper.requireNonNull(mapper, "mapper is null");
         return RxJavaPlugins.onAssembly(new ObservableSwitchMapMaybe<T, R>(this, mapper, true));
@@ -12360,16 +12408,15 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code switchMapSingle} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.0.8 - experimental
      * @param <R> the element type of the inner SingleSources and the output
      * @param mapper
      *            a function that, when applied to an item emitted by the source ObservableSource, returns a
      *            SingleSource
      * @return an Observable that emits the item emitted by the SingleSource returned from applying {@code func} to the most recently emitted item emitted by the source ObservableSource
      * @see <a href="http://reactivex.io/documentation/operators/flatmap.html">ReactiveX operators documentation: FlatMap</a>
-     * @since 2.0.8
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     @NonNull
@@ -12392,16 +12439,15 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code switchMapSingleDelayError} does not operate by default on a particular {@link Scheduler}.</dd>
      * </dl>
-     *
+     * <p>History: 2.0.8 - experimental
      * @param <R> the element type of the inner SingleSources and the output
      * @param mapper
      *            a function that, when applied to an item emitted by the source ObservableSource, returns a
      *            SingleSource
      * @return an Observable that emits the item emitted by the SingleSource returned from applying {@code func} to the most recently emitted item emitted by the source ObservableSource
      * @see <a href="http://reactivex.io/documentation/operators/flatmap.html">ReactiveX operators documentation: FlatMap</a>
-     * @since 2.0.8
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     @NonNull
@@ -13052,15 +13098,15 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code throttleLatest} operates by default on the {@code computation} {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.14 - experimental
      * @param timeout the time to wait after an item emission towards the downstream
      *                before trying to emit the latest item from upstream again
      * @param unit    the time unit
      * @return the new Observable instance
-     * @since 2.1.14 - experimental
      * @see #throttleLatest(long, TimeUnit, boolean)
      * @see #throttleLatest(long, TimeUnit, Scheduler)
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.COMPUTATION)
     public final Observable<T> throttleLatest(long timeout, TimeUnit unit) {
@@ -13080,6 +13126,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>{@code throttleLatest} operates by default on the {@code computation} {@link Scheduler}.</dd>
      * </dl>
+     * <p>History: 2.1.14 - experimental
      * @param timeout the time to wait after an item emission towards the downstream
      *                before trying to emit the latest item from upstream again
      * @param unit    the time unit
@@ -13088,10 +13135,9 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                 a timeout window active or not. If {@code false}, the very last
      *                 upstream item is ignored and the flow terminates.
      * @return the new Observable instance
-     * @since 2.1.14 - experimental
      * @see #throttleLatest(long, TimeUnit, Scheduler, boolean)
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.COMPUTATION)
     public final Observable<T> throttleLatest(long timeout, TimeUnit unit, boolean emitLast) {
@@ -13114,16 +13160,16 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>You specify which {@link Scheduler} this operator will use.</dd>
      * </dl>
+     * <p>History: 2.1.14 - experimental
      * @param timeout the time to wait after an item emission towards the downstream
      *                before trying to emit the latest item from upstream again
      * @param unit    the time unit
      * @param scheduler the {@link Scheduler} where the timed wait and latest item
      *                  emission will be performed
      * @return the new Observable instance
-     * @since 2.1.14 - experimental
      * @see #throttleLatest(long, TimeUnit, Scheduler, boolean)
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.CUSTOM)
     public final Observable<T> throttleLatest(long timeout, TimeUnit unit, Scheduler scheduler) {
@@ -13143,6 +13189,7 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *  <dt><b>Scheduler:</b></dt>
      *  <dd>You specify which {@link Scheduler} this operator will use.</dd>
      * </dl>
+     * <p>History: 2.1.14 - experimental
      * @param timeout the time to wait after an item emission towards the downstream
      *                before trying to emit the latest item from upstream again
      * @param unit    the time unit
@@ -13153,9 +13200,8 @@ public abstract class Observable<T> implements ObservableSource<T> {
      *                 a timeout window active or not. If {@code false}, the very last
      *                 upstream item is ignored and the flow terminates.
      * @return the new Observable instance
-     * @since 2.1.14 - experimental
+     * @since 2.2
      */
-    @Experimental
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.CUSTOM)
     public final Observable<T> throttleLatest(long timeout, TimeUnit unit, Scheduler scheduler, boolean emitLast) {
@@ -14080,19 +14126,19 @@ public abstract class Observable<T> implements ObservableSource<T> {
     @CheckReturnValue
     @SchedulerSupport(SchedulerSupport.NONE)
     public final Flowable<T> toFlowable(BackpressureStrategy strategy) {
-        Flowable<T> o = new FlowableFromObservable<T>(this);
+        Flowable<T> f = new FlowableFromObservable<T>(this);
 
         switch (strategy) {
             case DROP:
-                return o.onBackpressureDrop();
+                return f.onBackpressureDrop();
             case LATEST:
-                return o.onBackpressureLatest();
+                return f.onBackpressureLatest();
             case MISSING:
-                return o;
+                return f;
             case ERROR:
-                return RxJavaPlugins.onAssembly(new FlowableOnBackpressureError<T>(o));
+                return RxJavaPlugins.onAssembly(new FlowableOnBackpressureError<T>(f));
             default:
-                return o.onBackpressureBuffer();
+                return f.onBackpressureBuffer();
         }
     }
 
